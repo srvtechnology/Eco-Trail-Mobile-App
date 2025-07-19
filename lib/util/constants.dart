@@ -1,0 +1,10 @@
+const extrabold="Extrabold";
+const bold="Bold";
+const semiBold="SemiBold";
+const lightItalic="LightItalic";
+const kadawabold="kadawabold";
+const kadawaregular="kadawaregular";
+const regular="regular";
+const getREQ = "GET";
+const postReq = "POST";
+const putReq = "PUT";
