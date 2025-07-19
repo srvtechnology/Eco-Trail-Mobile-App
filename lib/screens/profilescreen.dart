@@ -177,7 +177,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => const WebViewScreen("https://druknyofoundation.org/public/delete-account","Delete Account"),
+                                          builder: (context) => const WebViewScreen("http://druknyofoundation.org/public/delete-account","Delete Account"),
                                         ),
                                       );
                                     },
