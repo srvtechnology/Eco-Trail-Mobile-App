@@ -1,3 +1,4 @@
+import 'package:ecotrail/screens/signin.dart';
 import 'package:ecotrail/screens/webviewscreen.dart';
 import 'package:ecotrail/util/profileheader.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 
 import '../util/Constants.dart';
+import '../util/client.dart';
 import '../util/ecotrailheader.dart';
 import '../util/utility.dart';
 
@@ -135,7 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => const WebViewScreen(),
+                                          builder: (context) => const WebViewScreen("http://druknyofoundation.org/public/privacy","Privacy Policy"),
                                         ),
                                       );
                                     },
@@ -144,6 +146,96 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                           ),
+
+                          const SizedBox(height: 10),
+                          Card(
+                            color: Colors.white,
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 0,
+                              vertical: 0,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                left: 15.0,
+                                right: 5,
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Delete Account',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Colors.blue,
+                                      size: 18,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const WebViewScreen("https://druknyofoundation.org/public/delete-account","Delete Account"),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+                          Card(
+                            color: Colors.white,
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 0,
+                              vertical: 0,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                left: 15.0,
+                                right: 5,
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'LOGOUT',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Colors.blue,
+                                      size: 18,
+                                    ),
+                                    onPressed: () async{
+                                      Utility(context).saveToken("");
+                                      await Utility(context).saveEmail("");
+                                      await Utility(context).saveName("");
+
+                                      Navigator.push(context, createSlideRoute(SigninScreen()));
+
+                                      bool success = await APIService.logout(context);
+                                      if (success) {
+                                        Navigator.push(context, createSlideRoute(SigninScreen()));
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Logout failed')),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
                         ],
                       ),
                     ),
@@ -154,6 +246,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Route createSlideRoute(Widget page) {
+    return PageRouteBuilder(
+      transitionDuration: const Duration(milliseconds: 400),
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(1.0, 0.0); // from right to left
+        const end = Offset.zero;
+        final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: Curves.easeInOut));
+        return SlideTransition(position: animation.drive(tween), child: child);
+      },
     );
   }
 

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class WebViewScreen extends StatefulWidget {
-  const WebViewScreen({super.key});
+  final String url,title;
+  const WebViewScreen(this.url,this.title,{super.key});
 
   @override
   State<WebViewScreen> createState() => _WebViewScreenState();
@@ -16,13 +17,13 @@ class _WebViewScreenState extends State<WebViewScreen> {
     super.initState();
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadRequest(Uri.parse('http://druknyofoundation.org/public/privacy'));
+      ..loadRequest(Uri.parse(widget.url));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Privacy Policy")),
+      appBar: AppBar(title: Text(widget.title)),
       body: WebViewWidget(controller: _controller),
     );
   }
