@@ -73,7 +73,6 @@ class HomeOptionProvider extends ChangeNotifier {
       isHome ? "":'all': 'true',
       if (categoryId != null && categoryId != 0) 'category_id': categoryId.toString(),
     });
-
     try {
       final response = await http.get(
         uri,
