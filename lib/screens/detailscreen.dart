@@ -88,7 +88,6 @@ class _DetailScreenState extends State<DetailScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Image slider
             Container(
               decoration: BoxDecoration(
                 boxShadow: [
@@ -136,7 +135,7 @@ class _DetailScreenState extends State<DetailScreen> {
                         count: _imageList.length,
                         effect: const WormEffect(
                           dotColor: Colors.white70,
-                          activeDotColor: Colors.green,
+                          activeDotColor: Colors.greenAccent,
                           dotHeight: 8,
                           dotWidth: 8,
                         ),
@@ -149,7 +148,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     child: CircleAvatar(
                       backgroundColor: Colors.white,
                       child: IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.green),
+                        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.greenAccent),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
@@ -165,21 +164,15 @@ class _DetailScreenState extends State<DetailScreen> {
                             MaterialPageRoute(builder: (_) => MapScreen(double.parse(widget.datum.latitude!),double.parse(widget.datum.longitude!),widget.datum.latlong_info??"")));         },
                       child: CircleAvatar(
                         backgroundColor: Colors.white,
-                        radius: 18,
-                        child: Image.asset(
-                          'assets/map_green.png',
-                          width: 18,
-                          height: 20,
-                        ),
+                        radius: 16,
+                        child: Icon(Icons.location_pin,color: Colors.greenAccent,),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Wrap(
@@ -192,9 +185,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 }).toList(),
               )
             ),
-
             const SizedBox(height: 20),
-
             // About Section
             Expanded(
               child: Padding(

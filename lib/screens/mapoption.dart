@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../util/client.dart';
 import '../util/utility.dart';
+import 'homescreen.dart';
 
 class MapScreenOption extends StatefulWidget {
   static const String routeName = '/mapoption';
@@ -28,7 +29,10 @@ class _MapScreenState extends State<MapScreenOption> {
   @override
   void initState() {
     super.initState();
-    _loadMapData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadMapData();
+    });
+
   }
 
   Future<void> _loadMapData() async {
@@ -63,9 +67,9 @@ class _MapScreenState extends State<MapScreenOption> {
       final token = await Utility(context).getToken();
 
       final response = await http.get(
-        Uri.parse("http://druknyofoundation.org/public/api/get-all-latlong"),
+        token!=null?Uri.parse("http://druknyofoundation.org/public/api/get-all-latlong"):Uri.parse("http://druknyofoundation.org/public/api/guest-get-all-latlong"),
         headers: {
-          "Authorization": "Bearer $token",
+          "Authorization": "Bearer ${token??""}",
           "Accept": "application/json",
         },
       );
@@ -164,12 +168,14 @@ class _MapScreenState extends State<MapScreenOption> {
         leading: IconButton(
           icon: const Icon(Icons.person, color: Colors.black),
           onPressed: () {
-            Navigator.push(context, createSlideRoute(const ProfileScreen()));
+            HomePageState.Token.isNotEmpty? Navigator.push(context, createSlideRoute(const ProfileScreen())):ScaffoldMessenger.of(
+             context,
+           ).showSnackBar(const SnackBar(content: Text('Do Login First')));
           },
         ),
 
         actions: [
-          IconButton(
+          HomePageState.Token.isNotEmpty?IconButton(
             icon: const Icon(Icons.logout, color: Colors.black),
             onPressed: () async {
               Utility(context).saveToken("");
@@ -182,7 +188,7 @@ class _MapScreenState extends State<MapScreenOption> {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Logout failed')));
               }
             },
-          ),
+          ):SizedBox(),
         ],
       ),
       body: (_currentLocation == null)

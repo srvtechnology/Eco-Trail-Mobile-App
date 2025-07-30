@@ -10,6 +10,7 @@ import '../util/Constants.dart';
 import '../util/client.dart';
 import '../util/utility.dart';
 import 'detailscreen.dart';
+import 'homescreen.dart';
 
 class Searchoption extends StatefulWidget {
   static const String routeName = '/searchoption';
@@ -75,6 +76,7 @@ class _SearchoptionState extends State<Searchoption> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,15 +85,17 @@ class _SearchoptionState extends State<Searchoption> {
         elevation: 5,
         leading: IconButton(
           icon: const Icon(Icons.person, color: Colors.white),
-          onPressed: () {
-
-            Navigator.push(context, createSlideRoute(const ProfileScreen()));
+          onPressed: () async{
+            HomePageState.Token.isNotEmpty?Navigator.push(context, createSlideRoute(const ProfileScreen()))
+            :ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Do Login First')));
             },
         ),
 
 
         actions: [
-          IconButton(
+          HomePageState.Token.isNotEmpty?IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () async {
               Utility(context).saveToken("");
@@ -106,7 +110,7 @@ class _SearchoptionState extends State<Searchoption> {
                 );
               }
             },
-          ),
+          ):SizedBox(),
         ],
         title: const Text("Search Places", style: TextStyle(color: Colors.white, fontFamily: bold)),
       ),

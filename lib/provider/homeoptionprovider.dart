@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:ecotrail/screens/homescreen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -29,21 +30,21 @@ class HomeOptionProvider extends ChangeNotifier {
     setApiCallProcess(true);
 
     final token = await Utility(context).getToken(); // if you use auth token
-    final url = Uri.parse('http://druknyofoundation.org/public/api/space-categories');
+    final url = HomePageState.Token.isNotEmpty?Uri.parse('http://druknyofoundation.org/public/api/space-categories'):
+    Uri.parse('http://druknyofoundation.org/public/api/guest-space-categories');
 
     try {
       final response = await http.get(
         url,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token', // include if required
+          'Authorization': 'Bearer ${HomePageState.Token.isNotEmpty ?? ""}', // include if required
         },
       );
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         final categoryModel = CategoryModel.fromJson(jsonResponse);
-
         _categoryList = [
           Data(
             id: 0,
@@ -68,7 +69,8 @@ class HomeOptionProvider extends ChangeNotifier {
     final token = await Utility(context).getToken();
 
     // Build URI with 'all=true' and optional 'category_id'
-    final Uri uri = Uri.parse("http://druknyofoundation.org/public/api/eco-trail/main-spaces")
+    final Uri uri = HomePageState.Token.isNotEmpty?Uri.parse("http://druknyofoundation.org/public/api/eco-trail/main-spaces"):
+    Uri.parse("http://druknyofoundation.org/public/api/guest-eco-trail/main-spaces")
         .replace(queryParameters: {
       isHome ? "":'all': 'true',
       if (categoryId != null && categoryId != 0) 'category_id': categoryId.toString(),
@@ -78,7 +80,7 @@ class HomeOptionProvider extends ChangeNotifier {
         uri,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer ${HomePageState.Token.isNotEmpty ?? ""}',
         },
       );
 

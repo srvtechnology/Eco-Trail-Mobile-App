@@ -1,3 +1,4 @@
+import 'package:ecotrail/util/utility.dart';
 import 'package:flutter/material.dart';
 import 'package:ecotrail/screens/homeoption.dart';
 import 'package:ecotrail/screens/searchoption.dart';
@@ -8,17 +9,19 @@ class HomePage extends StatefulWidget {
   static const String routeName = '/homescreen';
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() => HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+
+  static String Token="";
 
   final List<BottomNavigationBarItem> _items = [
     BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
     BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'Menu'),
     BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-    BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
+    BottomNavigationBarItem(icon: Icon(Icons.location_pin), label: 'Map'),
   ];
 
   void _onItemTapped(int index) {
@@ -27,6 +30,16 @@ class _HomePageState extends State<HomePage> {
         _selectedIndex = index;
       });
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    initData();
+  }
+
+  void initData() async{
+    Token= (await Utility(context).getToken())!;
   }
 
   Widget _getPage(int index) {
