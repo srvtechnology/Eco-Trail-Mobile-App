@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:ecotrail/model/placemodel.dart';
-import 'package:ecotrail/util/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
+import '../model/placemodel.dart';
+import '../util/Constants.dart';
 import 'mapscreen.dart';
 
 class DetailScreen extends StatefulWidget {

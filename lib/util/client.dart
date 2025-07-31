@@ -129,8 +129,18 @@ class APIService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final jsonMap = json.decode(response.body);
-        return LoginModel.fromJson(jsonMap);
-      } else {
+
+        if(jsonMap["message"].toString().contains("OTP has been sent to your email. Please verify.")){
+
+          return LoginModel(
+            message: jsonMap['message'] ?? 'invailed username or password',
+            user: null,
+          );
+        } else {
+          return LoginModel.fromJson(jsonMap);
+        }
+      }
+       else {
         final jsonMap = json.decode(response.body);
         return LoginModel(
           message: jsonMap['message'] ?? 'Login failed. Please try again.',

@@ -43,7 +43,6 @@ class _CulturalEventsScreenState extends State<CulturalEventsScreen> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,20 +50,20 @@ class _CulturalEventsScreenState extends State<CulturalEventsScreen> {
         backgroundColor: Colors.green,
         elevation: 5,
         title: Text(
-          "Places & More",
+          "Places",
           style: TextStyle(color: Colors.white, fontFamily: bold),
         ),
         leading: IconButton(
           icon: const Icon(Icons.person, color: Colors.white),
           onPressed: () async {
- HomePageState.Token.isNotEmpty
-                ? Navigator.push(
-                  context,
-                  createSlideRoute(const ProfileScreen()),
-                )
-                : ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('Do Login First')));
+            if (HomePageState.Token.isNotEmpty) {
+              Navigator.push(context, createSlideRoute(const ProfileScreen()));
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Login to access account page')),
+              );
+              Navigator.pushReplacement(context, createSlideRoute(const SigninScreen()));
+            }
           },
         ),
 
@@ -73,12 +72,12 @@ class _CulturalEventsScreenState extends State<CulturalEventsScreen> {
             icon: const Icon(Icons.filter_alt, color: Colors.white),
             onPressed: _showCategoryBottomSheet,
           ),
-           HomePageState.Token.isNotEmpty
+          HomePageState.Token.isNotEmpty
               ? IconButton(
                 icon: const Icon(Icons.logout, color: Colors.white),
                 onPressed: () async {
                   Utility(context).saveToken("");
-
+                  HomePageState.Token="";
                   await Utility(context).saveEmail("");
                   await Utility(context).saveName("");
                   Navigator.push(

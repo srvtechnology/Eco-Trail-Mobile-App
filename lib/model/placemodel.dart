@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:ecotrail/screens/homescreen.dart';
+
 class PlaceModel {
   PlaceModel({
     required this.status,
@@ -10,7 +12,7 @@ class PlaceModel {
   final List<Datum> data;
 
   factory PlaceModel.fromJson(Map<String, dynamic> json) {
-    final nestedData = json["data"];
+    final nestedData = HomePageState.Token.isNotEmpty?json["data"]["data"]:json["data"];
     final placeList = nestedData is List
         ? nestedData.map((x) => Datum.fromJson(x)).toList()
         : <Datum>[];

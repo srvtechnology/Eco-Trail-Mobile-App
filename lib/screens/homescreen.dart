@@ -1,9 +1,11 @@
-import 'package:ecotrail/util/utility.dart';
-import 'package:flutter/material.dart';
-import 'package:ecotrail/screens/homeoption.dart';
+
 import 'package:ecotrail/screens/searchoption.dart';
-import 'package:ecotrail/screens/menuoption.dart';
-import 'package:ecotrail/screens/mapoption.dart';
+import 'package:flutter/material.dart';
+
+import '../util/utility.dart';
+import 'homeoption.dart';
+import 'mapoption.dart';
+import 'menuoption.dart';
 
 class HomePage extends StatefulWidget {
   static const String routeName = '/homescreen';
@@ -40,6 +42,9 @@ class HomePageState extends State<HomePage> {
 
   void initData() async{
     Token= (await Utility(context).getToken())!;
+    setState(() {
+
+    });
   }
 
   Widget _getPage(int index) {
@@ -47,7 +52,7 @@ class HomePageState extends State<HomePage> {
       case 0:
         return const HomeOption();
       case 1:
-        return const CulturalEventsScreen();
+        return  CulturalEventsScreen();
       case 2:
         return const Searchoption();
       case 3:

@@ -12,6 +12,7 @@ import 'homescreen.dart';
 
 class MapScreenOption extends StatefulWidget {
   static const String routeName = '/mapoption';
+
   const MapScreenOption({super.key});
 
   @override
@@ -32,7 +33,6 @@ class _MapScreenState extends State<MapScreenOption> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadMapData();
     });
-
   }
 
   Future<void> _loadMapData() async {
@@ -42,12 +42,17 @@ class _MapScreenState extends State<MapScreenOption> {
 
   Future<void> _getCurrentLocation() async {
     LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return;
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever)
+        return;
     }
 
-    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
     _currentLocation = LatLng(position.latitude, position.longitude);
 
     setState(() {
@@ -56,7 +61,9 @@ class _MapScreenState extends State<MapScreenOption> {
           markerId: const MarkerId("current_location"),
           position: _currentLocation!,
           infoWindow: const InfoWindow(title: "Your Location"),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueAzure,
+          ),
         ),
       );
     });
@@ -67,9 +74,15 @@ class _MapScreenState extends State<MapScreenOption> {
       final token = await Utility(context).getToken();
 
       final response = await http.get(
-        token!=null?Uri.parse("http://druknyofoundation.org/public/api/get-all-latlong"):Uri.parse("http://druknyofoundation.org/public/api/guest-get-all-latlong"),
+        token != null
+            ? Uri.parse(
+              "http://druknyofoundation.org/public/api/get-all-latlong",
+            )
+            : Uri.parse(
+              "http://druknyofoundation.org/public/api/guest-get-all-latlong",
+            ),
         headers: {
-          "Authorization": "Bearer ${token??""}",
+          "Authorization": "Bearer ${token ?? ""}",
           "Accept": "application/json",
         },
       );
@@ -90,8 +103,9 @@ class _MapScreenState extends State<MapScreenOption> {
               position: LatLng(lat, long),
               infoWindow: InfoWindow(title: placeName),
               onTap: () {
-                if(latlnginfo==null){
-                  latlnginfo= "\"[{\\\"lat\\\":27.54875757222691,\\\"lng\\\":90.7560361217041},{\\\"lat\\\":27.54875757222691,\\\"lng\\\":90.7571519206543},{\\\"lat\\\":27.548300977297572,\\\"lng\\\":90.75796731219482},{\\\"lat\\\":27.547425831710992,\\\"lng\\\":90.75796731219482}]\"";
+                if (latlnginfo == null) {
+                  latlnginfo =
+                      "\"[{\\\"lat\\\":27.54875757222691,\\\"lng\\\":90.7560361217041},{\\\"lat\\\":27.54875757222691,\\\"lng\\\":90.7571519206543},{\\\"lat\\\":27.548300977297572,\\\"lng\\\":90.75796731219482},{\\\"lat\\\":27.547425831710992,\\\"lng\\\":90.75796731219482}]\"";
                 }
                 _staticRoute = parseLatLngListFromEncoded(latlnginfo);
                 _drawRouteFromStaticList();
@@ -112,7 +126,9 @@ class _MapScreenState extends State<MapScreenOption> {
   List<LatLng> parseLatLngListFromEncoded(String encoded) {
     final decodedOnce = json.decode(encoded); // Removes outer quotes
     final List<dynamic> jsonList = json.decode(decodedOnce); // Parses the array
-    return jsonList.map<LatLng>((item) => LatLng(item['lat'], item['lng'])).toList();
+    return jsonList
+        .map<LatLng>((item) => LatLng(item['lat'], item['lng']))
+        .toList();
   }
 
   void _drawRouteFromStaticList() {
@@ -143,7 +159,10 @@ class _MapScreenState extends State<MapScreenOption> {
 
   void _toggleMapType() {
     setState(() {
-      _currentMapType = _currentMapType == MapType.normal ? MapType.satellite : MapType.normal;
+      _currentMapType =
+          _currentMapType == MapType.normal
+              ? MapType.satellite
+              : MapType.normal;
     });
   }
 
@@ -154,7 +173,10 @@ class _MapScreenState extends State<MapScreenOption> {
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         const begin = Offset(1.0, 0.0); // from right to left
         const end = Offset.zero;
-        final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: Curves.easeInOut));
+        final tween = Tween(
+          begin: begin,
+          end: end,
+        ).chain(CurveTween(curve: Curves.easeInOut));
         return SlideTransition(position: animation.drive(tween), child: child);
       },
     );
@@ -168,58 +190,71 @@ class _MapScreenState extends State<MapScreenOption> {
         leading: IconButton(
           icon: const Icon(Icons.person, color: Colors.black),
           onPressed: () {
-            HomePageState.Token.isNotEmpty? Navigator.push(context, createSlideRoute(const ProfileScreen())):ScaffoldMessenger.of(
-             context,
-           ).showSnackBar(const SnackBar(content: Text('Do Login First')));
+            if (HomePageState.Token.isNotEmpty) {
+              Navigator.push(context, createSlideRoute(const ProfileScreen()));
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Login to access account page')),
+              );
+              Navigator.pushReplacement(context, createSlideRoute(const SigninScreen()));
+            }
           },
         ),
 
         actions: [
-          HomePageState.Token.isNotEmpty?IconButton(
-            icon: const Icon(Icons.logout, color: Colors.black),
-            onPressed: () async {
-              Utility(context).saveToken("");
-
-              await Utility(context).saveEmail("");
-              await Utility(context).saveName("");
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SigninScreen()));
-              bool success = await APIService.logout(context);
-              if (!success) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Logout failed')));
-              }
-            },
-          ):SizedBox(),
+          HomePageState.Token.isNotEmpty
+              ? IconButton(
+                icon: const Icon(Icons.logout, color: Colors.black),
+                onPressed: () async {
+                  Utility(context).saveToken("");
+                  HomePageState.Token="";
+                  await Utility(context).saveEmail("");
+                  await Utility(context).saveName("");
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => SigninScreen()),
+                  );
+                  bool success = await APIService.logout(context);
+                  if (!success) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Logout failed')));
+                  }
+                },
+              )
+              : SizedBox(),
         ],
       ),
-      body: (_currentLocation == null)
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-        children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _currentLocation!,
-              zoom: 13.0,
-            ),
-            onMapCreated: (controller) => _mapController = controller,
-            markers: _markers,
-            polylines: _polylines,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-            mapType: _currentMapType,
-          ),
-          Positioned(
-            top: 55,
-            right: 5,
-            child: FloatingActionButton(
-              mini: true,
-              tooltip: "Toggle Satellite View",
-              backgroundColor: Colors.black87,
-              child: const Icon(Icons.layers, color: Colors.white),
-              onPressed: _toggleMapType,
-            ),
-          )
-        ],
-      ),
+      body:
+          (_currentLocation == null)
+              ? const Center(child: CircularProgressIndicator())
+              : Stack(
+                children: [
+                  GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: _currentLocation!,
+                      zoom: 13.0,
+                    ),
+                    onMapCreated: (controller) => _mapController = controller,
+                    markers: _markers,
+                    polylines: _polylines,
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: true,
+                    mapType: _currentMapType,
+                  ),
+                  Positioned(
+                    top: 55,
+                    right: 5,
+                    child: FloatingActionButton(
+                      mini: true,
+                      tooltip: "Toggle Satellite View",
+                      backgroundColor: Colors.black87,
+                      child: const Icon(Icons.layers, color: Colors.white),
+                      onPressed: _toggleMapType,
+                    ),
+                  ),
+                ],
+              ),
     );
   }
 }

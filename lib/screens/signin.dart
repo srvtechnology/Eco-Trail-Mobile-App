@@ -1,11 +1,12 @@
-import 'package:ecotrail/provider/loginprovider.dart';
-import 'package:ecotrail/screens/homescreen.dart';
+
 import 'package:ecotrail/screens/signup.dart';
-import 'package:ecotrail/util/constants.dart';
-import 'package:ecotrail/util/utility.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../provider/loginprovider.dart';
+import '../util/Constants.dart';
 import '../util/ecotrailheader.dart';
+import '../util/utility.dart';
+import 'homescreen.dart';
 
 class SigninScreen extends StatefulWidget {
   static const String routeName = '/signin';
@@ -289,3 +290,39 @@ class _SigninScreenState extends State<SigninScreen> {
     ),
   );
 }
+
+//showDialog(
+//         context: context,
+//         builder: (context) {
+//           final otpController = TextEditingController();
+//
+//           return AlertDialog(
+//             title: const Text("Verify OTP"),
+//             content: TextField(
+//               controller: otpController,
+//               keyboardType: TextInputType.number,
+//               decoration: const InputDecoration(
+//                 hintText: "Enter OTP",
+//               ),
+//             ),
+//             actions: [
+//               TextButton(
+//                 child: const Text("Cancel"),
+//                 onPressed: () => Navigator.pop(context),
+//               ),
+//               ElevatedButton(
+//                 onPressed: () {
+//                   final otp = otpController.text.trim();
+//                   if (otp.isNotEmpty) {
+//                     Navigator.pop(context); // Close dialog
+//                     verifyOtp(otp,email!); // Call your OTP verify function
+//                   } else {
+//                     _utility.showCustomSnackbar("Please enter OTP", Colors.red);
+//                   }
+//                 },
+//                 child: const Text("Verify"),
+//               ),
+//             ],
+//           );
+//         },
+//       );

@@ -1,9 +1,10 @@
+
 import 'package:ecotrail/screens/signin.dart';
-import 'package:ecotrail/util/constants.dart';
-import 'package:ecotrail/util/utility.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../util/Constants.dart';
 import '../util/ecotrailheader.dart';
+import '../util/utility.dart';
 import 'homescreen.dart';
 
 class SplashScreen extends StatefulWidget {

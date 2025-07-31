@@ -1,7 +1,6 @@
-import 'package:ecotrail/model/signupRequestmodel.dart';
-import 'package:ecotrail/model/signupmodel.dart';
 import 'package:flutter/material.dart';
 
+import '../model/signupRequestmodel.dart';
 import '../util/client.dart';
 import '../util/utility.dart';
 

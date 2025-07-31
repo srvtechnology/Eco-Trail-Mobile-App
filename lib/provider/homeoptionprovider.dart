@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:ecotrail/screens/homescreen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../model/categorymodel.dart';
 import '../model/placemodel.dart';
+import '../screens/homescreen.dart';
 import '../util/constants.dart';  // for token utilities if needed
 import '../util/utility.dart';   // for getToken
 
@@ -38,7 +38,7 @@ class HomeOptionProvider extends ChangeNotifier {
         url,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${HomePageState.Token.isNotEmpty ?? ""}', // include if required
+          'Authorization': 'Bearer ${HomePageState.Token.isNotEmpty ? token:""}', // include if required
         },
       );
 
@@ -80,7 +80,7 @@ class HomeOptionProvider extends ChangeNotifier {
         uri,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${HomePageState.Token.isNotEmpty ?? ""}',
+          'Authorization': 'Bearer ${HomePageState.Token.isNotEmpty ? token:""}',
         },
       );
 

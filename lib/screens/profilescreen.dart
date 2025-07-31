@@ -1,6 +1,7 @@
+
+import 'package:ecotrail/screens/homescreen.dart';
 import 'package:ecotrail/screens/signin.dart';
 import 'package:ecotrail/screens/webviewscreen.dart';
-import 'package:ecotrail/util/profileheader.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -9,6 +10,7 @@ import 'dart:convert';
 import '../util/Constants.dart';
 import '../util/client.dart';
 import '../util/ecotrailheader.dart';
+import '../util/profileheader.dart';
 import '../util/utility.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -217,6 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       Utility(context).saveToken("");
                                       await Utility(context).saveEmail("");
                                       await Utility(context).saveName("");
+                                      HomePageState.Token="";
 
                                       Navigator.push(context, createSlideRoute(SigninScreen()));
 

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:ecotrail/screens/homescreen.dart';
 import 'package:ecotrail/screens/profilescreen.dart';
 import 'package:ecotrail/screens/signin.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +11,7 @@ import '../screens/detailscreen.dart';
 import '../util/client.dart';
 import '../util/constants.dart';
 import '../util/utility.dart';
+import 'homescreen.dart';
 
 class HomeOption extends StatefulWidget {
   static const String routeName = '/homeoption';
@@ -85,14 +85,22 @@ class _HomeOptionState extends State<HomeOption> {
         leading: IconButton(
           icon: const Icon(Icons.person, color: Colors.black),
           onPressed: () async {
-            HomePageState.Token.isNotEmpty
-                ? Navigator.push(
-                  context,
-                  createSlideRoute(const ProfileScreen()),
-                )
-                : ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('Do Login First')));
+
+
+           if(HomePageState.Token.isNotEmpty){
+             Navigator.push(
+               context,
+               createSlideRoute(const ProfileScreen()),
+             );
+           }else{
+             ScaffoldMessenger.of(
+               context,
+             ).showSnackBar(const SnackBar(content: Text('Login to access account page')));
+             Navigator.pushReplacement(
+               context,
+               createSlideRoute(const SigninScreen()),
+             );
+           }
           },
         ),
         actions: [
@@ -102,6 +110,7 @@ class _HomeOptionState extends State<HomeOption> {
               Utility(context).saveToken("");
               await Utility(context).saveEmail("");
               await Utility(context).saveName("");
+              HomePageState.Token="";
               Navigator.push(context, createSlideRoute(SigninScreen()));
               bool success = await APIService.logout(context);
               if (success) {
