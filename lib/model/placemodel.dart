@@ -1,6 +1,7 @@
 import 'dart:convert';
 
-import 'package:ecotrail/screens/homescreen.dart';
+import '../screens/homescreen.dart';
+
 
 class PlaceModel {
   PlaceModel({
