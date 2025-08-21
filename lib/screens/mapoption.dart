@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:ecotrail/model/routpoint.dart';
 import 'package:ecotrail/screens/profilescreen.dart';
 import 'package:ecotrail/screens/signin.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +25,7 @@ class _MapScreenState extends State<MapScreenOption> {
   LatLng? _currentLocation;
   final Set<Marker> _markers = {};
   final Set<Polyline> _polylines = {};
-  List<LatLng> _staticRoute = [];
+  List<RoutePoint> _staticRoute = [];
   MapType _currentMapType = MapType.normal;
 
   @override
@@ -104,8 +105,7 @@ class _MapScreenState extends State<MapScreenOption> {
               infoWindow: InfoWindow(title: placeName),
               onTap: () {
                 if (latlnginfo == null) {
-                  latlnginfo =
-                      "\"[{\\\"lat\\\":27.54875757222691,\\\"lng\\\":90.7560361217041},{\\\"lat\\\":27.54875757222691,\\\"lng\\\":90.7571519206543},{\\\"lat\\\":27.548300977297572,\\\"lng\\\":90.75796731219482},{\\\"lat\\\":27.547425831710992,\\\"lng\\\":90.75796731219482}]\"";
+                  latlnginfo = "[{\"lat\":27.493193005811459528331397450529038906097412109375,\"lng\":90.915133165359492295465315692126750946044921875,\"name\":\"Pema Lingpa's parents\",\"description\":\"Pema Lingpa's parents were Lama D\öndrup Zangpo of the Ny\ö clan and Drogmo Pema Drolma. His father was from Sumtrang, according to The Treasury of Lives. Pema Lingpa was born in 1450 in Chel, part of the Bumthang region of Bhutan. His mother was believed to possess the signs of a dakini, according to the Tibetan Buddhist Encyclopedia. \",\"image\":\"uploads\\/latlong_images\\/bmKaJWw8Atehlsw3ubFGgZw3Daq9TkXtEYrCVrBN.jpg\"},{\"lat\":27.49311686832669465729850344359874725341796875,\"lng\":90.917881810690914790029637515544891357421875,\"name\":\"\",\"description\":\"\",\"image\":\"null\"},{\"lat\":27.492393559595331709033416700549423694610595703125,\"lng\":90.918804490592037836904637515544891357421875,\"name\":\"\",\"description\":\"\",\"image\":\"null\"},{\"lat\":27.4914989343279785316553898155689239501953125,\"lng\":90.9202667819968866069757496006786823272705078125,\"name\":\"\",\"description\":\"\",\"image\":\"null\"},{\"lat\":27.4936117610365045038633979856967926025390625,\"lng\":90.9204813587180780132257496006786823272705078125,\"name\":\"\",\"description\":\"\",\"image\":\"null\"},{\"lat\":27.4949060852984104030838352628052234649658203125,\"lng\":90.9201702224723504741632496006786823272705078125,\"name\":\"\",\"description\":\"\",\"image\":\"null\"},{\"lat\":27.49584826765381961877210414968430995941162109375,\"lng\":90.9210714447013543804132496006786823272705078125,\"name\":\"\",\"description\":\"\",\"image\":\"null\"},{\"lat\":27.49910301738079709821249707601964473724365234375,\"lng\":90.9217795478812860210382496006786823272705078125,\"name\":\"\",\"description\":\"\",\"image\":\"null\"},{\"lat\":27.500041138081623870448311208747327327728271484375,\"lng\":90.923025744620844079690868966281414031982421875,\"name\":\"\",\"description\":\"\",\"image\":\"null\"},{\"lat\":27.511899954584833949411404319107532501220703125,\"lng\":90.9192668017091847332267207093536853790283203125,\"name\":\"\",\"description\":\"\",\"image\":\"null\"},{\"lat\":27.51496473239340190275470376946032047271728515625,\"lng\":90.9076951555821182182626216672360897064208984375,\"name\":\"\",\"description\":\"\",\"image\":\"null\"}]";
                 }
                 _staticRoute = parseLatLngListFromEncoded(latlnginfo);
                 _drawRouteFromStaticList();
@@ -123,38 +123,86 @@ class _MapScreenState extends State<MapScreenOption> {
     }
   }
 
-  List<LatLng> parseLatLngListFromEncoded(String encoded) {
-    final decodedOnce = json.decode(encoded); // Removes outer quotes
-    final List<dynamic> jsonList = json.decode(decodedOnce); // Parses the array
-    return jsonList
-        .map<LatLng>((item) => LatLng(item['lat'], item['lng']))
-        .toList();
-  }
-
   void _drawRouteFromStaticList() {
     if (_staticRoute.isEmpty) return;
 
     setState(() {
       _polylines.clear();
-      _markers.removeWhere((m) => m.markerId.value == 'route_end');
+      _markers.clear();
 
+      // Draw the polyline
       _polylines.add(
         Polyline(
           polylineId: const PolylineId('static_route'),
           width: 5,
           color: Colors.blue,
-          points: _staticRoute,
+          points: _staticRoute.map((p) => LatLng(p.lat, p.lng)).toList(),
         ),
       );
 
-      _markers.add(
-        Marker(
-          markerId: const MarkerId('route_end'),
-          position: _staticRoute.last,
-          infoWindow: const InfoWindow(title: "Route End"),
-        ),
-      );
+      // Add markers for each point
+      for (int i = 0; i < _staticRoute.length; i++) {
+        final point = _staticRoute[i];
+        _markers.add(
+          Marker(
+            markerId: MarkerId('route_point_$i'),
+            position: LatLng(point.lat, point.lng),
+            infoWindow: InfoWindow(
+              title: point.name?.isNotEmpty == true ? point.name : 'Point $i',
+            ),
+            onTap: () {
+              // Show description + image in a dialog
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: Text(
+                    point.name?.isNotEmpty == true ? point.name! : 'Point $i',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (point.image != null &&
+                            point.image!.isNotEmpty &&
+                            point.image != "null")
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Image.network(
+                              "http://druknyofoundation.org/public/storage/${point.image!}",                              errorBuilder: (context, error, stackTrace) =>
+                              const Text("Image failed to load"),
+                            ),
+                          ),
+                        Text(point.description ?? 'No description available'),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      child: const Text("Close"),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      }
     });
+  }
+
+
+  List<RoutePoint> parseLatLngListFromEncoded(String encoded) {
+    dynamic firstDecode = json.decode(encoded);
+
+    if (firstDecode is String) {
+      // Handles double-encoded JSON
+      firstDecode = json.decode(firstDecode);
+    }
+
+    final List<dynamic> jsonList = firstDecode;
+    return jsonList.map<RoutePoint>((item) => RoutePoint.fromJson(item)).toList();
   }
 
   void _toggleMapType() {

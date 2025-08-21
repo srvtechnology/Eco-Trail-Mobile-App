@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -11,7 +10,8 @@ class MapScreen extends StatefulWidget {
   final double long;
   final String listcoordinate;
 
-  const MapScreen(this.lat, this.long, this.listcoordinate, {Key? key}) : super(key: key);
+  const MapScreen(this.lat, this.long, this.listcoordinate, {Key? key})
+      : super(key: key);
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -29,10 +29,16 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    var rawData = widget.listcoordinate;
-    if (rawData.isNotEmpty) {
+    if (widget.listcoordinate.isNotEmpty) {
       try {
-        _staticRoute = parseLatLngListFromEncoded(rawData);
+        _addCustomMarkers(widget.listcoordinate);
+        _staticRoute = _parseLatLngList(widget.listcoordinate);
+        if (_staticRoute.isNotEmpty) {
+          _addStaticMarkers();
+          _drawStaticRoute();
+        } else {
+          _drawRouteToDestination(LatLng(widget.lat, widget.long));
+        }
       } catch (_) {
         _staticRoute = [];
       }
@@ -40,35 +46,34 @@ class _MapScreenState extends State<MapScreen> {
     _determinePosition();
   }
 
-  List<LatLng> parseLatLngListFromEncoded(String encoded) {
-    final decodedOnce = json.decode(encoded); // Removes the outer escaped string
-    final List<dynamic> jsonList = json.decode(decodedOnce); // Actual list
 
-    return jsonList.map<LatLng>((item) {
-      return LatLng(item['lat'], item['lng']);
-    }).toList();
+  /// Parse LatLng only (for drawing polyline/zoom)
+  List<LatLng> _parseLatLngList(String encoded) {
+    final List<dynamic> jsonList = json.decode(encoded);
+    return jsonList
+        .map((item) => LatLng(item['lat'], item['lng']))
+        .toList();
   }
 
-  Future<void> _determinePosition() async {
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return;
-    }
+  /// Add Markers with dialog on tap
+  void _addCustomMarkers(String encoded) {
+    final List<dynamic> jsonList = json.decode(encoded);
 
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
+    for (int i = 0; i < jsonList.length; i++) {
+      final item = jsonList[i];
+      final LatLng position = LatLng(item['lat'], item['lng']);
+      final String title =
+      (item['name'] as String).isNotEmpty ? item['name'] : "Point ${i + 1}";
+      final String description = item['description'] ?? "";
+      final String imageUrl = "http://druknyofoundation.org/public/storage/${item['image']}" ?? "";
 
-    _currentLocation = LatLng(position.latitude, position.longitude);
-
-    setState(() {
       _markers.add(
         Marker(
-          markerId: const MarkerId('current_location'),
-          position: _currentLocation!,
-          infoWindow: const InfoWindow(title: 'Your Location'),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          markerId: MarkerId('marker_$i'),
+          position: position,
+          onTap: () {
+            _showLocationDialog(title, description, imageUrl);
+          },
         ),
       );
 
@@ -78,31 +83,37 @@ class _MapScreenState extends State<MapScreen> {
       } else {
         _drawRouteToDestination(LatLng(widget.lat, widget.long));
       }
-    });
-  }
-
-  void _addStaticMarkers() {
-    for (int i = 0; i < _staticRoute.length; i++) {
-      _markers.add(
-        Marker(
-          markerId: MarkerId('stop_$i'),
-          position: _staticRoute[i],
-          infoWindow: InfoWindow(title: 'Point ${i + 1}'),
-        ),
-      );
     }
   }
 
   void _drawStaticRoute() {
-    _polylines.add(
-      Polyline(
-        polylineId: const PolylineId('static_route'),
-        color: Colors.blue,
-        width: 5,
-        points: _staticRoute,
-      ),
-    );
+    setState(() {
+      _polylines.clear();
+      _polylines.add(
+        Polyline(
+          polylineId: const PolylineId('static_route'),
+          color: Colors.blue,
+          width: 5,
+          points: _staticRoute,
+        ),
+      );
+    });
   }
+
+  void _addStaticMarkers() {
+    setState(() {
+      for (int i = 0; i < _staticRoute.length; i++) {
+        _markers.add(
+          Marker(
+            markerId: MarkerId('stop_$i'),
+            position: _staticRoute[i],
+            infoWindow: InfoWindow(title: 'Point ${i + 1}'),
+          ),
+        );
+      }
+    });
+  }
+
 
   Future<void> _drawRouteToDestination(LatLng destination) async {
     if (_currentLocation == null) return;
@@ -148,6 +159,7 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+
   List<LatLng> _decodePolyline(String encoded) {
     List<LatLng> polyline = [];
     int index = 0, len = encoded.length;
@@ -179,9 +191,92 @@ class _MapScreenState extends State<MapScreen> {
     return polyline;
   }
 
+
+  // Show dialog with image + description...
+  void _showLocationDialog(String title, String description, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.8,
+            height: 300,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                if (imageUrl.isNotEmpty && imageUrl != "null")
+                  SizedBox(
+                    height: 150,
+                    width: double.infinity,
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(child: Text("Image not available"));
+                      },
+                    ),
+                  ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Text(
+                      description.isNotEmpty ? description : "No description available",
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Get current location...
+  Future<void> _determinePosition() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) return;
+    }
+
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    _currentLocation = LatLng(position.latitude, position.longitude);
+
+    setState(() {
+      _markers.add(
+        Marker(
+          markerId: const MarkerId('current_location'),
+          position: _currentLocation!,
+          infoWindow: const InfoWindow(title: 'Your Location'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueAzure),
+        ),
+      );
+    });
+  }
+
   void _toggleMapType() {
     setState(() {
-      _currentMapType = _currentMapType == MapType.normal ? MapType.satellite : MapType.normal;
+      _currentMapType = _currentMapType == MapType.normal
+          ? MapType.satellite
+          : MapType.normal;
     });
   }
 
@@ -197,7 +292,8 @@ class _MapScreenState extends State<MapScreen> {
             initialCameraPosition: CameraPosition(
               target: _staticRoute.isNotEmpty
                   ? _staticRoute.first
-                  : (_currentLocation ?? LatLng(widget.lat, widget.long)),
+                  : (_currentLocation ??
+                  LatLng(widget.lat, widget.long)),
               zoom: 15.0,
             ),
             onMapCreated: (controller) {

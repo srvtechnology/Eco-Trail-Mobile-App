@@ -32,8 +32,8 @@ android {
         applicationId = "com.eco.trail.ecotrail"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = 7
-        versionName = "1.0.6"
+        versionCode = 12
+        versionName = "1.0.9"
     }
 
     signingConfigs {

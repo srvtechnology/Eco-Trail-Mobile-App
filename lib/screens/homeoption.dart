@@ -343,7 +343,9 @@ class _HomeOptionState extends State<HomeOption> {
                         Navigator.push(
                           context,
                           createSlideRoute(
-                            MapScreen(
+                            MapScreen
+
+                              (
                               double.parse(data.latitude!),
                               double.parse(data.longitude!),
                               data.latlong_info ?? "",
