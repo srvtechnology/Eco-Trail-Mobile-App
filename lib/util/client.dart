@@ -25,33 +25,42 @@ class APIService {
   Future<SignUpModel> Signup(SignupRequestModel requestModel) async {
     try {
       final client = http.Client();
-
       final url = Uri.parse("$baseUrl${Api.SIGNUP}");
       final request = http.Request('POST', url);
       request.headers['Content-Type'] = 'application/json';
       request.body = jsonEncode(requestModel.toJson());
 
-      print("Sending signup request to: $url");
-      print("Request body: ${request.body}");
+      print("📤 Sending signup request to: $url");
+      print("📦 Request body: ${request.body}");
 
       final streamedResponse = await client.send(request);
-
-      print("Received streamed response with status: ${streamedResponse.statusCode}");
-
       final responseBody = await streamedResponse.stream.bytesToString();
 
-      print("Response body: $responseBody");
+      print("📥 Response Status: ${streamedResponse.statusCode}");
+      print("📄 Response Body: $responseBody");
 
+      final jsonMap = json.decode(responseBody);
+
+      // ✅ Case 1: Successful signup (200/201)
       if (streamedResponse.statusCode == 200 || streamedResponse.statusCode == 201) {
-        final jsonMap = json.decode(responseBody);
         return SignUpModel.fromJson(jsonMap);
-      } else {
-        final jsonMap = json.decode(responseBody);
+      }
+
+      // ✅ Case 2: Validation or logical error (e.g. email already taken)
+      if (jsonMap is Map<String, dynamic> && jsonMap['message'] == 'Validation error') {
         return SignUpModel(
-          message: jsonMap['message'] ?? 'Signup failed',
+          message: jsonMap['message'],
+          errors: jsonMap['errors'], // ✅ Capture error messages
           user: null,
         );
       }
+
+      // ✅ Case 3: Other error
+      return SignUpModel(
+        message: jsonMap['message'] ?? 'Signup failed.',
+        errors: jsonMap['errors'],
+        user: null,
+      );
     } catch (e, stacktrace) {
       print("🔥 Signup Error: $e");
       print("📍 Stacktrace:\n$stacktrace");
@@ -61,8 +70,8 @@ class APIService {
         user: null,
       );
     }
-
   }
+
 
   static Future<bool> logout(BuildContext context) async {
     try {

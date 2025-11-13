@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../model/signupRequestmodel.dart';
@@ -43,18 +45,53 @@ class SignUpProvider with ChangeNotifier {
       ..email = email;
 
     apiService.Signup(signupRequestModel).then((value) {
-      if (value.message != null && value.message != "Validation error") {
-        callback(successData: value.message, errorMessage: null);
-      } else if (value.message == "Validation error" && value.user != null) {
-        String errorMessages = extractValidationMessages(value.user! as Map<String, dynamic>);
-        callback(successData: null, errorMessage: errorMessages);
-      } else {
-        callback(successData: null, errorMessage: "Signup failed.");
+      try {
+        // Case 1: Successful signup
+        if (value.message != null && value.message != "Validation error") {
+          callback(successData: value.message, errorMessage: null);
+        }
+        // Case 2: Validation error
+        else if (value.message == "Validation error") {
+          String errorMessage = extractFirstErrorMessage(value.errors);
+          callback(successData: null, errorMessage: errorMessage);
+        }
+        // Case 3: Other unknown failures
+        else {
+          callback(successData: null, errorMessage: "Signup failed.");
+        }
+      } catch (e) {
+        callback(successData: null, errorMessage: "Error handling response: $e");
       }
     }).catchError((e) {
       callback(successData: null, errorMessage: "Something went wrong: $e");
     });
+
+
+
   }
+  String extractFirstErrorMessage(dynamic errors) {
+    try {
+      if (errors is String) {
+        final decoded = json.decode(errors);
+        errors = decoded is String ? json.decode(decoded) : decoded;
+      }
+
+      if (errors is Map<String, dynamic>) {
+        for (var value in errors.values) {
+          if (value is List && value.isNotEmpty) {
+            return value.first.toString(); // ✅ e.g. "The email has already been taken."
+          } else if (value is String) {
+            return value;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Error parsing validation message: $e");
+    }
+
+    return "Validation error occurred.";
+  }
+
 
 
   String extractValidationMessages(Map<String, dynamic> errorMap) {

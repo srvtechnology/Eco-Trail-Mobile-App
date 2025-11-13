@@ -1,0 +1,39 @@
+buildscript {
+    ext.kotlin_version = '1.9.25'
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        // Kept for legacy compatibility; AGP is declared in settings.gradle plugins block.
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.buildDir = '../build'
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(':app')
+}
+
+// Disable warnings-as-errors across all Java compilation tasks in subprojects (e.g., video_player_android)
+subprojects {
+    tasks.withType(JavaCompile).configureEach { JavaCompile t ->
+        t.options.compilerArgs << '-Xlint:-options'
+        t.options.warnings = false
+    }
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}

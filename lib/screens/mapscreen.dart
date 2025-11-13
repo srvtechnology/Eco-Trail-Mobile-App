@@ -1,9 +1,10 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+
+import '../model/mapmodel.dart';
 
 class MapScreen extends StatefulWidget {
   static const String routeName = '/mapoption';
@@ -11,7 +12,8 @@ class MapScreen extends StatefulWidget {
   final double long;
   final String listcoordinate;
 
-  const MapScreen(this.lat, this.long, this.listcoordinate, {Key? key}) : super(key: key);
+  const MapScreen(this.lat, this.long, this.listcoordinate, {Key? key})
+    : super(key: key);
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -22,44 +24,71 @@ class _MapScreenState extends State<MapScreen> {
   LatLng? _currentLocation;
   final Set<Marker> _markers = {};
   final Set<Polyline> _polylines = {};
-  List<LatLng> _staticRoute = [];
+  List<MapPoint> _mapPoints = [];
 
   MapType _currentMapType = MapType.normal;
 
   @override
   void initState() {
     super.initState();
-    var rawData = widget.listcoordinate;
-    if (rawData.isNotEmpty) {
+    if (widget.listcoordinate.isNotEmpty) {
       try {
-        _staticRoute = parseLatLngListFromEncoded(rawData);
+        _mapPoints = parseMapPoints(widget.listcoordinate);
       } catch (_) {
-        _staticRoute = [];
+        _mapPoints = [];
       }
     }
     _determinePosition();
   }
 
-  List<LatLng> parseLatLngListFromEncoded(String encoded) {
-    final decodedOnce = json.decode(encoded); // Removes the outer escaped string
-    final List<dynamic> jsonList = json.decode(decodedOnce); // Actual list
+  // ✅ Parse single or double-encoded coordinate data
+  List<MapPoint> parseMapPoints(String encoded) {
+    try {
+      dynamic decoded = json.decode(encoded);
+      if (decoded is String) decoded = json.decode(decoded);
 
-    return jsonList.map<LatLng>((item) {
-      return LatLng(item['lat'], item['lng']);
-    }).toList();
+      if (decoded is List) {
+        return decoded.map<MapPoint>((item) {
+          final lat =
+              (item['lat'] is num)
+                  ? item['lat'].toDouble()
+                  : double.tryParse(item['lat'].toString()) ?? 0.0;
+          final lng =
+              (item['lng'] is num)
+                  ? item['lng'].toDouble()
+                  : double.tryParse(item['lng'].toString()) ?? 0.0;
+
+          return MapPoint(
+            position: LatLng(lat, lng),
+            name: item['name']?.toString() ?? "Unnamed Point",
+            description:
+                item['description']?.toString() ?? "No description available",
+            image: "http://druknyofoundation.org/public/storage/${item['image']?.toString()}",
+          );
+        }).toList();
+      }
+
+      print("⚠️ Unexpected structure for encoded coordinates");
+      return [];
+    } catch (e) {
+      print("❌ Error parsing map points: $e");
+      return [];
+    }
   }
 
+  // ✅ Get current position
   Future<void> _determinePosition() async {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return;
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever)
+        return;
     }
 
     Position position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
-
     _currentLocation = LatLng(position.latitude, position.longitude);
 
     setState(() {
@@ -68,11 +97,13 @@ class _MapScreenState extends State<MapScreen> {
           markerId: const MarkerId('current_location'),
           position: _currentLocation!,
           infoWindow: const InfoWindow(title: 'Your Location'),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueAzure,
+          ),
         ),
       );
 
-      if (_staticRoute.isNotEmpty) {
+      if (_mapPoints.isNotEmpty) {
         _addStaticMarkers();
         _drawStaticRoute();
       } else {
@@ -81,29 +112,108 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
+  // ✅ Add markers for static route points
   void _addStaticMarkers() {
-    for (int i = 0; i < _staticRoute.length; i++) {
+    for (int i = 0; i < _mapPoints.length; i++) {
+      final point = _mapPoints[i];
       _markers.add(
         Marker(
           markerId: MarkerId('stop_$i'),
-          position: _staticRoute[i],
-          infoWindow: InfoWindow(title: 'Point ${i + 1}'),
+          position: point.position,
+          infoWindow: InfoWindow(
+            title: point.name,
+            onTap: () {
+              _showInfoDialog(point);
+            },
+          ),
         ),
       );
     }
   }
 
+  // ✅ Draw static route polyline
   void _drawStaticRoute() {
-    _polylines.add(
-      Polyline(
-        polylineId: const PolylineId('static_route'),
-        color: Colors.blue,
-        width: 5,
-        points: _staticRoute,
-      ),
+    final points = _mapPoints.map((p) => p.position).toList();
+    if (points.isNotEmpty) {
+      _polylines.add(
+        Polyline(
+          polylineId: const PolylineId('static_route'),
+          color: Colors.blue,
+          width: 5,
+          points: points,
+        ),
+      );
+    }
+  }
+
+  // ✅ Dialog for marker info
+  void _showInfoDialog(MapPoint point) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (point.image != null &&
+                  point.image!.isNotEmpty &&
+                  point.image != "null")
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                  child: Image.network(
+                    "${point.image}",
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: 180,
+                    errorBuilder:
+                        (_, __, ___) => Container(
+                          height: 180,
+                          color: Colors.grey[300],
+                          child: const Icon(
+                            Icons.image_not_supported,
+                            size: 60,
+                            color: Colors.grey,
+                          ),
+                        ),
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      point.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      point.description,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Close"),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
+  // ✅ Dynamic route (if static route not available)
   Future<void> _drawRouteToDestination(LatLng destination) async {
     if (_currentLocation == null) return;
 
@@ -131,8 +241,13 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  Future<List<LatLng>> _getRouteCoordinates(LatLng origin, LatLng destination) async {
-    const String apiKey = 'AIzaSyB-ocv6g9BGI80S68ok6Cjjp2xvLqcLEs4'; // Replace with your actual key
+  // ✅ Fetch directions from Google API
+  Future<List<LatLng>> _getRouteCoordinates(
+    LatLng origin,
+    LatLng destination,
+  ) async {
+    const String apiKey =
+        'AIzaSyB-ocv6g9BGI80S68ok6Cjjp2xvLqcLEs4'; // Replace with your actual key
     final String url =
         'https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&key=$apiKey';
 
@@ -148,6 +263,7 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  // ✅ Decode Google Polyline
   List<LatLng> _decodePolyline(String encoded) {
     List<LatLng> polyline = [];
     int index = 0, len = encoded.length;
@@ -181,47 +297,51 @@ class _MapScreenState extends State<MapScreen> {
 
   void _toggleMapType() {
     setState(() {
-      _currentMapType = _currentMapType == MapType.normal ? MapType.satellite : MapType.normal;
+      _currentMapType =
+          _currentMapType == MapType.normal
+              ? MapType.satellite
+              : MapType.normal;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Google Map - Static/Dynamic Route")),
-      body: (_currentLocation == null)
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-        children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _staticRoute.isNotEmpty
-                  ? _staticRoute.first
-                  : (_currentLocation ?? LatLng(widget.lat, widget.long)),
-              zoom: 15.0,
-            ),
-            onMapCreated: (controller) {
-              _mapController = controller;
-            },
-            mapType: _currentMapType,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-            markers: _markers,
-            polylines: _polylines,
-          ),
-          Positioned(
-            top: 55,
-            right: 5,
-            child: FloatingActionButton(
-              onPressed: _toggleMapType,
-              child: const Icon(Icons.layers),
-              backgroundColor: Colors.black,
-              mini: true,
-              tooltip: 'Toggle Map Type',
-            ),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text("EcoTrail Map")),
+      body:
+          (_currentLocation == null)
+              ? const Center(child: CircularProgressIndicator())
+              : Stack(
+                children: [
+                  GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target:
+                          _mapPoints.isNotEmpty
+                              ? _mapPoints.first.position
+                              : (_currentLocation ??
+                                  LatLng(widget.lat, widget.long)),
+                      zoom: 14.0,
+                    ),
+                    onMapCreated: (controller) => _mapController = controller,
+                    mapType: _currentMapType,
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: true,
+                    markers: _markers,
+                    polylines: _polylines,
+                  ),
+                  Positioned(
+                    top: 55,
+                    right: 5,
+                    child: FloatingActionButton(
+                      onPressed: _toggleMapType,
+                      child: const Icon(Icons.layers),
+                      backgroundColor: Colors.black,
+                      mini: true,
+                      tooltip: 'Toggle Map Type',
+                    ),
+                  ),
+                ],
+              ),
     );
   }
 }

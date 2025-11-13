@@ -186,7 +186,6 @@ class _DetailScreenState extends State<DetailScreen> {
               )
             ),
             const SizedBox(height: 20),
-            // About Section
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -202,9 +201,7 @@ class _DetailScreenState extends State<DetailScreen> {
                         final detail = item['detail'] ?? '';
                         return InfoText(label: title, value: detail);
                       }).toList(),
-
                       const SizedBox(height: 20),
-
                       const Text('Description', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       const SizedBox(height: 6),
                       Html(
@@ -219,7 +216,6 @@ class _DetailScreenState extends State<DetailScreen> {
                       ),
                       const SizedBox(height: 20),
                     ],
-
                   ),
                 ),
               ),

@@ -122,14 +122,29 @@ class _MapScreenState extends State<MapScreenOption> {
       debugPrint("Error fetching marker data: $e");
     }
   }
-
   List<LatLng> parseLatLngListFromEncoded(String encoded) {
-    final decodedOnce = json.decode(encoded); // Removes outer quotes
-    final List<dynamic> jsonList = json.decode(decodedOnce); // Parses the array
-    return jsonList
-        .map<LatLng>((item) => LatLng(item['lat'], item['lng']))
-        .toList();
+    try {
+      // Try decoding once
+      final decoded = json.decode(encoded);
+
+      if (decoded is List) {
+        // Already a list of lat/lng objects
+        return decoded
+            .map<LatLng>((item) => LatLng(item['lat'], item['lng']))
+            .toList();
+      } else if (decoded is String) {
+        // Double-encoded string
+        final List<dynamic> jsonList = json.decode(decoded);
+        return jsonList
+            .map<LatLng>((item) => LatLng(item['lat'], item['lng']))
+            .toList();
+      }
+    } catch (e) {
+      debugPrint("Error parsing latlng info: $e");
+    }
+    return [];
   }
+
 
   void _drawRouteFromStaticList() {
     if (_staticRoute.isEmpty) return;
@@ -155,7 +170,35 @@ class _MapScreenState extends State<MapScreenOption> {
         ),
       );
     });
+
+    // Focus map camera on route
+    _fitMapToPolyline(_staticRoute);
   }
+
+  void _fitMapToPolyline(List<LatLng> points) {
+    if (_mapController == null || points.isEmpty) return;
+
+    LatLngBounds bounds = _createBoundsFromLatLngList(points);
+    _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 60));
+  }
+
+  LatLngBounds _createBoundsFromLatLngList(List<LatLng> list) {
+    double x0 = list.first.latitude, x1 = list.first.latitude;
+    double y0 = list.first.longitude, y1 = list.first.longitude;
+
+    for (LatLng latLng in list) {
+      if (latLng.latitude > x1) x1 = latLng.latitude;
+      if (latLng.latitude < x0) x0 = latLng.latitude;
+      if (latLng.longitude > y1) y1 = latLng.longitude;
+      if (latLng.longitude < y0) y0 = latLng.longitude;
+    }
+
+    return LatLngBounds(
+      southwest: LatLng(x0, y0),
+      northeast: LatLng(x1, y1),
+    );
+  }
+
 
   void _toggleMapType() {
     setState(() {

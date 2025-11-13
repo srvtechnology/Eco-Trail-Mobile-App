@@ -12,7 +12,7 @@ class PlaceModel {
   final List<Datum> data;
 
   factory PlaceModel.fromJson(Map<String, dynamic> json) {
-    final nestedData = HomePageState.Token.isNotEmpty?json["data"]["data"]:json["data"];
+    final nestedData = json["data"];
     final placeList = nestedData is List
         ? nestedData.map((x) => Datum.fromJson(x)).toList()
         : <Datum>[];

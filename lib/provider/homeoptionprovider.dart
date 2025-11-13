@@ -64,23 +64,37 @@ class HomeOptionProvider extends ChangeNotifier {
 
     setApiCallProcess(false);
   }
-  Future<void> fetchPlacesByCategory(BuildContext context, bool isHome,{int? categoryId}) async {
+  Future<void> fetchPlacesByCategory(BuildContext context, bool isHome, {int? categoryId}) async {
     setApiCallProcess(true);
     final token = await Utility(context).getToken();
 
-    // Build URI with 'all=true' and optional 'category_id'
-    final Uri uri = HomePageState.Token.isNotEmpty?Uri.parse("http://druknyofoundation.org/public/api/eco-trail/main-spaces"):
-    Uri.parse("http://druknyofoundation.org/public/api/guest-eco-trail/main-spaces")
-        .replace(queryParameters: {
-      isHome ? "":'all': 'true',
-      if (categoryId != null && categoryId != 0) 'category_id': categoryId.toString(),
-    });
+    // Build query parameters dynamically
+    final Map<String, String> queryParams = {};
+
+    // ✅ Only add "all=true" when isHome is false
+    if (!isHome) {
+      queryParams['all'] = 'true';
+    }
+
+    // ✅ Add category ID if provided
+    if (categoryId != null && categoryId != 0) {
+      queryParams['cat_id'] = categoryId.toString();
+    }
+
+    // ✅ Choose endpoint based on whether token exists
+    final Uri uri = (HomePageState.Token.isNotEmpty
+        ? Uri.parse("http://druknyofoundation.org/public/api/eco-trail/main-spaces")
+        : Uri.parse("http://druknyofoundation.org/public/api/guest-eco-trail/main-spaces"))
+        .replace(queryParameters: queryParams);
+
+    print("📡 Fetching places from: $uri");
+
     try {
       final response = await http.get(
         uri,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${HomePageState.Token.isNotEmpty ? token:""}',
+          'Authorization': 'Bearer ${HomePageState.Token.isNotEmpty ? token : ""}',
         },
       );
 
@@ -88,11 +102,13 @@ class HomeOptionProvider extends ChangeNotifier {
         final jsonBody = jsonDecode(response.body);
         final placeModel = PlaceModel.fromJson(jsonBody);
         placeList = placeModel.data;
+
+        print("✅ Places fetched: ${placeList.length}");
       } else {
-        debugPrint("Failed to fetch places. Status: ${response.statusCode}");
+        debugPrint("❌ Failed to fetch places. Status: ${response.statusCode}");
       }
     } catch (e) {
-      debugPrint("Error during fetchPlacesByCategory: $e");
+      debugPrint("🔥 Error during fetchPlacesByCategory: $e");
     }
 
     setApiCallProcess(false);
